@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block titulo %}Consultas Accesibles &mdash; Inicio{% endblock %}
+
+{% block contenido %}
+<h1>Consultas Accesibles</h1>
+<p>
+  Este sitio reúne módulos de consulta a distintas fuentes públicas de información.
+  Cada módulo vive en su propia página, pensada para navegarse con teclado y con
+  lector de pantalla.
+</p>
+
+<h2>Módulos disponibles</h2>
+<ul>
+  {% for modulo in modulos_disponibles %}
+  <li>
+    <a href="{{ url_for(modulo.endpoint) }}">{{ modulo.nombre }}</a>
+    &mdash; {{ modulo.descripcion }}
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

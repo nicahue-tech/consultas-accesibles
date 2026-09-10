@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block titulo %}Contacto &mdash; Consultas Accesibles{% endblock %}
+
+{% block contenido %}
+<h1>Contacto</h1>
+<p>Escríbenos usando este formulario y te responderemos apenas podamos.</p>
+
+<form method="post" novalidate>
+  {{ formulario.hidden_tag() }}
+
+  <p>
+    {{ formulario.nombre.label }}
+    {{ formulario.nombre(size=40) }}
+    {% for error in formulario.nombre.errors %}
+      <span role="alert">{{ error }}</span>
+    {% endfor %}
+  </p>
+
+  <p>
+    {{ formulario.correo.label }}
+    {{ formulario.correo(size=40, autocomplete="email") }}
+    {% for error in formulario.correo.errors %}
+      <span role="alert">{{ error }}</span>
+    {% endfor %}
+  </p>
+
+  <p>
+    {{ formulario.telefono.label }}
+    {{ formulario.telefono(size=40, autocomplete="tel") }}
+    {% for error in formulario.telefono.errors %}
+      <span role="alert">{{ error }}</span>
+    {% endfor %}
+  </p>
+
+  <p>
+    {{ formulario.mensaje.label }}
+    {{ formulario.mensaje(rows=6, cols=50) }}
+    {% for error in formulario.mensaje.errors %}
+      <span role="alert">{{ error }}</span>
+    {% endfor %}
+  </p>
+
+  <p>
+    {{ formulario.enviar() }}
+  </p>
+</form>
+{% endblock %}

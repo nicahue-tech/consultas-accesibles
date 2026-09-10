@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block titulo %}Consultas Accesibles{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+  {% block estilos_extra %}{% endblock %}
+</head>
+<body class="{% block clase_cuerpo %}{% endblock %}">
+  <a class="enlace-salto" href="#contenido-principal">Saltar al contenido principal</a>
+
+  <header>
+    <nav aria-label="Navegación principal">
+      <ul>
+        <li>
+          <a href="{{ url_for('principal.inicio') }}"
+             {% if request.endpoint == 'principal.inicio' %}aria-current="page"{% endif %}>Inicio</a>
+        </li>
+        {% for modulo in modulos_disponibles %}
+        <li>
+          <a href="{{ url_for(modulo.endpoint) }}"
+             {% if request.endpoint == modulo.endpoint %}aria-current="page"{% endif %}>{{ modulo.nombre }}</a>
+        </li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </header>
+
+  {% with mensajes = get_flashed_messages(with_categories=true) %}
+    {% if mensajes %}
+    <div id="mensajes-flash" role="alert" tabindex="-1">
+      <ul>
+        {% for categoria, mensaje in mensajes %}
+        <li>{{ mensaje }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  {% endwith %}
+
+  <main id="contenido-principal">
+    {% block contenido %}{% endblock %}
+  </main>
+
+  <footer>
+    <p>
+      <a href="{{ url_for('contacto.index') }}"
+         {% if request.endpoint in ('contacto.index', 'contacto.gracias') %}aria-current="page"{% endif %}>Contacto</a>
+    </p>
+    <p><a href="https://www.blindmachine.cl">Un proyecto Blindmachine</a></p>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/foco_alertas.js') }}"></script>
+  {% block scripts_extra %}{% endblock %}
+</body>
+</html>

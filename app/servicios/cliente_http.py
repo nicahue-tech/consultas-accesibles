@@ -1,0 +1,39 @@
+import requests
+from flask import current_app
+
+from app.servicios.errores import (
+    ErrorConexion,
+    ErrorRespuestaInvalida,
+    ErrorTiempoAgotado,
+)
+
+
+def solicitar_json(url, parametros=None, headers=None, timeout=None):
+    """Único punto del proyecto que llama a requests.get.
+
+    Centraliza el timeout y la traducción de errores de red a mensajes en
+    español, para que ningún servicio (USGS, Nominatim, mindicador.cl) tenga
+    que repetir el mismo manejo de excepciones.
+    """
+    timeout = timeout or current_app.config["TIMEOUT_APIS_EXTERNAS"]
+    try:
+        respuesta = requests.get(url, params=parametros, headers=headers, timeout=timeout)
+        respuesta.raise_for_status()
+        return respuesta.json()
+    except requests.exceptions.Timeout:
+        raise ErrorTiempoAgotado(
+            "El servicio externo tardó demasiado en responder. Intenta de nuevo en unos minutos."
+        )
+    except requests.exceptions.ConnectionError:
+        raise ErrorConexion(
+            "No se pudo conectar con el servicio externo. Revisa tu conexión a internet."
+        )
+    except requests.exceptions.HTTPError as error:
+        codigo = error.response.status_code if error.response is not None else "desconocido"
+        raise ErrorRespuestaInvalida(
+            f"El servicio externo respondió con un error (código {codigo})."
+        )
+    except ValueError:
+        raise ErrorRespuestaInvalida(
+            "El servicio externo devolvió una respuesta que no se pudo interpretar."
+        )

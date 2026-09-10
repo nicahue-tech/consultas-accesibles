@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block titulo %}Indicadores económicos &mdash; Consultas Accesibles{% endblock %}
+
+{% block contenido %}
+<h1>Indicadores económicos</h1>
+<p>
+  Consulta el valor de la UF, la UTM y el dólar observado de hoy, o elige una
+  fecha pasada para consultar esos mismos valores en ese día.
+</p>
+
+<form method="get" action="{{ url_for('indicadores.consultar') }}" id="formulario-fecha">
+  <label for="fecha">Fecha a consultar (opcional; deja vacío para hoy)</label>
+  <input type="date" id="fecha" name="fecha" value="{{ valores_formulario.get('fecha', '') }}">
+  <button type="submit">Consultar</button>
+</form>
+
+<p id="estado-fecha" class="oculto-visualmente" aria-live="polite"></p>
+
+<h2>Valores</h2>
+<div id="tabla-indicadores">
+  <table>
+    <caption>
+      Valor de la UF, la UTM y el dólar observado
+      {% if es_hoy %}de hoy{% else %}del {{ fecha_legible }}{% endif %}, en pesos chilenos.
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">Indicador</th>
+        <th scope="col">Valor en pesos chilenos</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th scope="row">UF</th>
+        <td>{% if indicadores.uf %}${{ indicadores.uf }}{% else %}No disponible{% endif %}</td>
+      </tr>
+      <tr>
+        <th scope="row">UTM</th>
+        <td>{% if indicadores.utm %}${{ indicadores.utm }}{% else %}No disponible{% endif %}</td>
+      </tr>
+      <tr>
+        <th scope="row">Dólar observado</th>
+        <td>{% if indicadores.dolar %}${{ indicadores.dolar }}{% else %}No disponible{% endif %}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Conversión entre monedas</h2>
+<p>
+  Convierte un monto entre pesos chilenos, UF, UTM y dólar, usando los
+  valores {% if es_hoy %}de hoy{% else %}del {{ fecha_legible }}{% endif %} mostrados arriba.
+</p>
+
+<form method="get" action="{{ url_for('indicadores.consultar') }}" id="formulario-conversion">
+  <input type="hidden" name="fecha" value="{{ valores_formulario.get('fecha', '') }}">
+
+  <label for="monto">Monto a convertir (obligatorio)</label>
+  <input type="number" id="monto" name="monto" step="any" min="0" required value="{{ valores_formulario.get('monto', '') }}">
+
+  <label for="desde">Desde</label>
+  {% set desde_actual = valores_formulario.get('desde', 'clp') %}
+  <select id="desde" name="desde">
+    <option value="clp" {% if desde_actual == 'clp' %}selected{% endif %}>Pesos chilenos</option>
+    <option value="uf" {% if desde_actual == 'uf' %}selected{% endif %}>UF</option>
+    <option value="utm" {% if desde_actual == 'utm' %}selected{% endif %}>UTM</option>
+    <option value="dolar" {% if desde_actual == 'dolar' %}selected{% endif %}>Dólar</option>
+  </select>
+
+  <label for="hacia">Hacia</label>
+  {% set hacia_actual = valores_formulario.get('hacia', 'uf') %}
+  <select id="hacia" name="hacia">
+    <option value="clp" {% if hacia_actual == 'clp' %}selected{% endif %}>Pesos chilenos</option>
+    <option value="uf" {% if hacia_actual == 'uf' %}selected{% endif %}>UF</option>
+    <option value="utm" {% if hacia_actual == 'utm' %}selected{% endif %}>UTM</option>
+    <option value="dolar" {% if hacia_actual == 'dolar' %}selected{% endif %}>Dólar</option>
+  </select>
+
+  <button type="submit">Calcular</button>
+</form>
+
+<p id="resultado-conversion" aria-live="polite">
+  {% if resultado_conversion %}{{ resultado_conversion }}{% endif %}
+</p>
+
+<h2>Sobre estos datos</h2>
+<p>
+  Los valores de la UF, la UTM y el dólar provienen de mindicador.cl, un
+  servicio independiente y de código abierto que replica los datos oficiales
+  del Banco Central de Chile. No es un servicio oficial del Estado, así que
+  aunque es confiable y ampliamente usado, la consulta puede fallar por ser
+  un servicio de terceros.
+</p>
+{% endblock %}
+
+{% block scripts_extra %}
+<script src="{{ url_for('static', filename='js/indicadores.js') }}"></script>
+{% endblock %}

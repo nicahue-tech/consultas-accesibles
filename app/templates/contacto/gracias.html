@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block titulo %}Mensaje enviado &mdash; Consultas Accesibles{% endblock %}
+
+{% block contenido %}
+<h1>Mensaje enviado</h1>
+<p>Gracias por escribir. Tu mensaje se envió correctamente y te responderemos apenas podamos.</p>
+<p><a href="{{ url_for('principal.inicio') }}">Volver al inicio</a></p>
+{% endblock %}

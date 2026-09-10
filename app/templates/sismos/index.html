@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block titulo %}Sismos &mdash; Consultas Accesibles{% endblock %}
+
+{% block contenido %}
+<h1>Sismos</h1>
+<p>
+  Busca sismos recientes según tu ubicación o una ciudad que indiques,
+  con un umbral de magnitud y un periodo de tiempo a elegir.
+</p>
+
+<div id="aviso-geolocalizacion" role="alert" hidden></div>
+<p id="aviso-ubicacion-detectada" class="oculto-visualmente" aria-live="polite"></p>
+
+<form method="get" action="{{ url_for('sismos.buscar') }}" id="formulario-sismos">
+  <label for="ciudad">Ubicación</label>
+  <p id="ayuda-ubicacion">
+    Escribe una ciudad o lugar, sin tildes: si escribes una, se quita sola.
+    Si tu navegador detecta tu ubicación automáticamente, este campo se
+    completa solo con el lugar detectado; puedes borrarlo y escribir otro
+    lugar cuando quieras.
+  </p>
+  <input type="text" id="ciudad" name="ciudad" aria-describedby="ayuda-ubicacion" list="sugerencias-ubicacion" autocomplete="off" value="{{ valores_formulario.get('ciudad', '') }}">
+  <datalist id="sugerencias-ubicacion"></datalist>
+  <input type="hidden" id="lat" name="lat" value="{{ valores_formulario.get('lat', '') }}">
+  <input type="hidden" id="lon" name="lon" value="{{ valores_formulario.get('lon', '') }}">
+
+  <label for="magnitud_min">Magnitud mayor a</label>
+  <select id="magnitud_min" name="magnitud_min">
+    {% set magnitud_actual = valores_formulario.get('magnitud_min', '4') %}
+    {% for valor in ['1', '2', '3', '4', '5', '6', '7', '8', '9'] %}
+    <option value="{{ valor }}" {% if magnitud_actual == valor %}selected{% endif %}>{{ valor }}</option>
+    {% endfor %}
+    <option value="todas" {% if magnitud_actual == 'todas' %}selected{% endif %}>Todas</option>
+  </select>
+
+  <label for="radio_km">Radio de búsqueda alrededor de la ubicación</label>
+  <select id="radio_km" name="radio_km">
+    {% set radio_actual = valores_formulario.get('radio_km', '200') %}
+    {% for valor, etiqueta in [('50', 'menor a 50 km'), ('100', 'menor a 100 km'), ('200', 'menor a 200 km'), ('500', 'menor a 500 km'), ('1000', 'menor a 1000 km'), ('2000', 'menor a 2000 km'), ('5000', 'menor a 5000 km')] %}
+    <option value="{{ valor }}" {% if radio_actual == valor %}selected{% endif %}>{{ etiqueta }}</option>
+    {% endfor %}
+  </select>
+
+  <label for="rango_tiempo">Periodo</label>
+  {% set rango_actual = valores_formulario.get('rango_tiempo', 'dia') %}
+  <select id="rango_tiempo" name="rango_tiempo">
+    <option value="hora" {% if rango_actual == 'hora' %}selected{% endif %}>Última hora</option>
+    <option value="dia" {% if rango_actual == 'dia' %}selected{% endif %}>Último día</option>
+    <option value="semana" {% if rango_actual == 'semana' %}selected{% endif %}>Última semana</option>
+    <option value="mes" {% if rango_actual == 'mes' %}selected{% endif %}>Último mes</option>
+  </select>
+
+  <button type="submit">Buscar sismos</button>
+</form>
+
+<p id="confirmacion-seleccion" class="oculto-visualmente" aria-live="polite"></p>
+
+<p id="estado-busqueda-sismos" class="oculto-visualmente" aria-live="polite"></p>
+
+<h2>Resultados</h2>
+{% if ubicacion_legible %}
+<p>Ubicación utilizada: {{ ubicacion_legible }}</p>
+{% endif %}
+
+<div id="resultados-sismos" aria-live="polite">
+  {% if resultados is none %}
+  <p>Aún no se ha realizado una búsqueda.</p>
+  {% elif resultados|length == 0 %}
+  <p>No se encontraron sismos con estos criterios.</p>
+  {% else %}
+  <ul>
+    {% for sismo in resultados %}
+    <li>
+      <p>{{ sismo.lugar }}, {{ sismo.fecha_hora_legible }}.</p>
+      <p>Profundidad: {{ sismo.profundidad_km }} kilómetros ({{ sismo.profundidad_descripcion }}).</p>
+      <p>Magnitud: {{ sismo.magnitud }} ({{ sismo.magnitud_descripcion }}).</p>
+      <p><a href="{{ sismo.url_detalle }}">Más información sobre el sismo en {{ sismo.lugar }}, en el sitio del USGS</a></p>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>
+
+<h2>Sobre estos datos</h2>
+<p>
+  Los datos de sismos provienen del Servicio Geológico de Estados Unidos
+  (USGS), una entidad gubernamental oficial. Aun así, como es un servicio de
+  un tercero, la consulta puede fallar o demorar por razones fuera de
+  nuestro control.
+</p>
+{% endblock %}
+
+{% block scripts_extra %}
+<script src="{{ url_for('static', filename='js/sismos.js') }}"></script>
+{% endblock %}
