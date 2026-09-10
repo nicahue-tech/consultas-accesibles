@@ -1,39 +1,57 @@
 import os
-import smtplib
-from email.message import EmailMessage
+
+import requests
+
+from app.servicios.errores import (
+    ErrorConexion,
+    ErrorRespuestaInvalida,
+    ErrorTiempoAgotado,
+)
+
+TIMEOUT_RELAY_CORREO = 10
 
 
-def leer_credenciales_correo():
-    remitente = os.environ.get("CORREO_REMITENTE")
-    clave_app = os.environ.get("CORREO_CLAVE_APP")
-    if not remitente or not clave_app:
+def leer_credenciales_relay():
+    url = os.environ.get("RELAY_CORREO_URL")
+    clave = os.environ.get("RELAY_CORREO_CLAVE")
+    if not url or not clave:
         raise RuntimeError(
-            "Faltan las variables de entorno CORREO_REMITENTE y/o CORREO_CLAVE_APP"
+            "Faltan las variables de entorno RELAY_CORREO_URL y/o RELAY_CORREO_CLAVE"
         )
-    return {"remitente": remitente, "clave_app": clave_app}
+    return {"url": url, "clave": clave}
 
 
 def enviar_correo_contacto(nombre_remitente, correo_remitente, telefono, mensaje):
-    # Mismo mecanismo que usa Blindmachine: credenciales de una cuenta Gmail
-    # con clave de aplicación, destino fijo (la casilla de contacto) y el
-    # remitente del formulario en Reply-To, para poder responderle directo.
-    credenciales = leer_credenciales_correo()
+    # El envío real ya no lo hace este proyecto: se le pide a Blindmachine,
+    # que sí puede usar SMTP directo porque está en un plan de pago, a
+    # través de su endpoint interno de relay de correo.
+    credenciales = leer_credenciales_relay()
 
-    mensaje_correo = EmailMessage()
-    mensaje_correo["Subject"] = "Nuevo mensaje de contacto - Consultas Accesibles"
-    mensaje_correo["From"] = credenciales["remitente"]
-    mensaje_correo["To"] = "contacto@blindmachine.cl"
-    mensaje_correo["Reply-To"] = correo_remitente
+    cuerpo = {
+        "origen": "Consultas Accesibles",
+        "nombre": nombre_remitente,
+        "correo": correo_remitente,
+        "telefono": telefono,
+        "mensaje": mensaje,
+    }
 
-    cuerpo = (
-        f"Nombre: {nombre_remitente}\n"
-        f"Correo: {correo_remitente}\n"
-        f"Teléfono: {telefono if telefono else 'No proporcionado'}\n\n"
-        f"Mensaje:\n{mensaje}\n"
-    )
-    mensaje_correo.set_content(cuerpo)
+    try:
+        respuesta = requests.post(
+            credenciales["url"],
+            json=cuerpo,
+            headers={"X-Relay-Key": credenciales["clave"]},
+            timeout=TIMEOUT_RELAY_CORREO,
+        )
+    except requests.exceptions.Timeout:
+        raise ErrorTiempoAgotado(
+            "El servicio de envío de correo tardó demasiado en responder. Intenta de nuevo en unos minutos."
+        )
+    except requests.exceptions.ConnectionError:
+        raise ErrorConexion(
+            "No se pudo conectar con el servicio de envío de correo. Revisa tu conexión a internet."
+        )
 
-    with smtplib.SMTP("smtp.gmail.com", 587) as servidor:
-        servidor.starttls()
-        servidor.login(credenciales["remitente"], credenciales["clave_app"])
-        servidor.send_message(mensaje_correo)
+    if respuesta.status_code != 200:
+        raise ErrorRespuestaInvalida(
+            f"El servicio de envío de correo respondió con un error (código {respuesta.status_code})."
+        )
