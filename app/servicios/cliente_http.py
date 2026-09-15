@@ -20,20 +20,24 @@ def solicitar_json(url, parametros=None, headers=None, timeout=None):
         respuesta = requests.get(url, params=parametros, headers=headers, timeout=timeout)
         respuesta.raise_for_status()
         return respuesta.json()
-    except requests.exceptions.Timeout:
+    except requests.exceptions.Timeout as error:
+        current_app.logger.warning(f"Timeout consultando {url}: {error!r}")
         raise ErrorTiempoAgotado(
             "El servicio externo tardó demasiado en responder. Intenta de nuevo en unos minutos."
         )
-    except requests.exceptions.ConnectionError:
+    except requests.exceptions.ConnectionError as error:
+        current_app.logger.warning(f"ConnectionError consultando {url}: {error!r}")
         raise ErrorConexion(
             "No se pudo conectar con el servicio externo. Revisa tu conexión a internet."
         )
     except requests.exceptions.HTTPError as error:
         codigo = error.response.status_code if error.response is not None else "desconocido"
+        current_app.logger.warning(f"HTTPError consultando {url}: {error!r}")
         raise ErrorRespuestaInvalida(
             f"El servicio externo respondió con un error (código {codigo})."
         )
-    except ValueError:
+    except ValueError as error:
+        current_app.logger.warning(f"ValueError consultando {url}: {error!r}")
         raise ErrorRespuestaInvalida(
             "El servicio externo devolvió una respuesta que no se pudo interpretar."
         )
