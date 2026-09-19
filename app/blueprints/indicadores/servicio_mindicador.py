@@ -4,7 +4,7 @@ from datetime import date
 from flask import current_app
 
 from app.servicios.cliente_http import solicitar_json
-from app.servicios.errores import ErrorRelayInvalido
+from app.servicios.errores import ErrorConsultaExterna, ErrorRelayInvalido
 
 URL_BASE_MINDICADOR = "https://mindicador.cl/api"
 
@@ -40,6 +40,49 @@ def consultar_en_relay(codigo, fecha):
     if datos.get("existe") is False:
         return None
     raise ErrorRelayInvalido("El servicio de historial de indicadores respondió en un formato inesperado.")
+
+
+def consultar_ultimo_en_relay(codigo):
+    """Pide a Blindmachine el último valor guardado para un código, sin
+    importar la fecha. Devuelve {"valor", "fecha"} (fecha como date) o None
+    si nunca se ha guardado nada (404 con {"existe": false}).
+    """
+    url, headers = _configuracion_relay()
+    datos = solicitar_json(
+        f"{url}/ultimo",
+        parametros={"codigo": codigo},
+        headers=headers,
+        codigos_aceptados=(404,),
+    )
+    if datos.get("existe") is False:
+        return None
+    if datos.get("existe") is True and datos.get("valor") is not None and datos.get("fecha"):
+        try:
+            fecha = date.fromisoformat(str(datos["fecha"])[:10])
+        except ValueError:
+            raise ErrorRelayInvalido("El servicio de historial de indicadores devolvió una fecha inválida.")
+        return {"valor": datos["valor"], "fecha": fecha}
+    raise ErrorRelayInvalido("El servicio de historial de indicadores respondió en un formato inesperado.")
+
+
+def obtener_ultimos_para_faltantes(indicadores):
+    """Para cada indicador que quedó en None, busca su último valor guardado.
+
+    Es un complemento informativo: si la consulta falla, se registra en el
+    log y ese indicador simplemente queda sin respaldo ("No disponible").
+    """
+    ultimos = {}
+    for clave, indicador in indicadores.items():
+        if indicador is not None:
+            continue
+        try:
+            ultimo = consultar_ultimo_en_relay(clave)
+        except ErrorConsultaExterna as error:
+            current_app.logger.warning(f"No se pudo obtener el último valor de {clave}: {error!r}")
+            continue
+        if ultimo is not None:
+            ultimos[clave] = ultimo
+    return ultimos
 
 
 def guardar_en_relay(codigo, fecha, valor, fuente):

@@ -33,15 +33,15 @@
     <tbody>
       <tr>
         <th scope="row">UF</th>
-        <td>{% if indicadores.uf %}${{ indicadores.uf }}{% else %}No disponible{% endif %}</td>
+        <td>{% if indicadores.uf %}${{ indicadores.uf }}{% else %}{{ mensajes_sin_dato.get('uf', 'No disponible') }}{% endif %}</td>
       </tr>
       <tr>
         <th scope="row">UTM</th>
-        <td>{% if indicadores.utm %}${{ indicadores.utm }}{% else %}No disponible{% endif %}</td>
+        <td>{% if indicadores.utm %}${{ indicadores.utm }}{% else %}{{ mensajes_sin_dato.get('utm', 'No disponible') }}{% endif %}</td>
       </tr>
       <tr>
         <th scope="row">Dólar observado</th>
-        <td>{% if indicadores.dolar %}${{ indicadores.dolar }}{% else %}No disponible{% endif %}</td>
+        <td>{% if indicadores.dolar %}${{ indicadores.dolar }}{% else %}{{ mensajes_sin_dato.get('dolar', 'No disponible') }}{% endif %}</td>
       </tr>
     </tbody>
   </table>
@@ -91,6 +91,12 @@
   del Banco Central de Chile. No es un servicio oficial del Estado, así que
   aunque es confiable y ampliamente usado, la consulta puede fallar por ser
   un servicio de terceros.
+</p>
+<p>
+  Cuando falta el valor del día, por ejemplo en un feriado en que no se
+  publica el dólar observado, se muestra el último valor guardado en el
+  historial propio de este sitio, junto con la fecha a la que corresponde.
+  Ese valor no es el de hoy, y no se usa para las conversiones.
 </p>
 {% endblock %}
 

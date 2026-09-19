@@ -40,7 +40,9 @@ document.addEventListener("DOMContentLoaded", function () {
       fila.appendChild(celdaNombre);
 
       var celdaValor = document.createElement("td");
-      celdaValor.textContent = datos.indicadores[clave] ? "$" + datos.indicadores[clave] : "No disponible";
+      celdaValor.textContent = datos.indicadores[clave]
+        ? "$" + datos.indicadores[clave]
+        : (datos.mensajes_sin_dato && datos.mensajes_sin_dato[clave]) || "No disponible";
       fila.appendChild(celdaValor);
 
       cuerpo.appendChild(fila);

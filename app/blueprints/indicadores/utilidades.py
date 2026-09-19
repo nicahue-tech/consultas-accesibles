@@ -41,6 +41,23 @@ def formatear_indicadores_para_mostrar(valores_indicadores):
     }
 
 
+def construir_mensajes_sin_dato(fecha_hoy, ultimos):
+    """Arma, por indicador, el texto que reemplaza a "No disponible" cuando
+    falta el valor de hoy pero existe un último valor guardado.
+
+    ultimos es {"uf": {"valor": ..., "fecha": date}, ...}. Solo se usa para
+    mostrar: la conversión de monedas nunca lee este dato.
+    """
+    return {
+        clave: (
+            f"No disponible para hoy ({formatear_fecha_legible(fecha_hoy)}). "
+            f"Último valor registrado: ${formatear_numero(ultimo['valor'])}, "
+            f"correspondiente al {formatear_fecha_legible(ultimo['fecha'])}."
+        )
+        for clave, ultimo in ultimos.items()
+    }
+
+
 def _valor_en_pesos_por_unidad(unidad, valores_indicadores):
     if unidad == "clp":
         return 1
