@@ -20,3 +20,8 @@ class ErrorConexion(ErrorConsultaExterna):
 
 class ErrorRespuestaInvalida(ErrorConsultaExterna):
     pass
+
+
+class ErrorRelayInvalido(ErrorConsultaExterna):
+    """El relay de indicadores respondió algo fuera del formato acordado o
+    no está configurado."""

@@ -8,17 +8,37 @@ from app.servicios.errores import (
 )
 
 
-def solicitar_json(url, parametros=None, headers=None, timeout=None):
-    """Único punto del proyecto que llama a requests.get.
+def solicitar_json(
+    url,
+    parametros=None,
+    headers=None,
+    timeout=None,
+    metodo="GET",
+    json_cuerpo=None,
+    codigos_aceptados=(),
+):
+    """Único punto del proyecto que hace llamadas HTTP salientes.
 
     Centraliza el timeout y la traducción de errores de red a mensajes en
-    español, para que ningún servicio (USGS, Nominatim, mindicador.cl) tenga
-    que repetir el mismo manejo de excepciones.
+    español, para que ningún servicio (USGS, Nominatim, mindicador.cl,
+    Blindmachine) tenga que repetir el mismo manejo de excepciones.
+
+    codigos_aceptados permite tratar ciertos códigos de error HTTP (por
+    ejemplo 404) como respuestas válidas: en ese caso se devuelve el JSON
+    del cuerpo en vez de lanzar ErrorRespuestaInvalida.
     """
     timeout = timeout or current_app.config["TIMEOUT_APIS_EXTERNAS"]
     try:
-        respuesta = requests.get(url, params=parametros, headers=headers, timeout=timeout)
-        respuesta.raise_for_status()
+        respuesta = requests.request(
+            metodo,
+            url,
+            params=parametros,
+            headers=headers,
+            json=json_cuerpo,
+            timeout=timeout,
+        )
+        if respuesta.status_code not in codigos_aceptados:
+            respuesta.raise_for_status()
         return respuesta.json()
     except requests.exceptions.Timeout as error:
         current_app.logger.warning(f"Timeout consultando {url}: {error!r}")
